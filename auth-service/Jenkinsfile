@@ -1,0 +1,30 @@
+pipeline {
+  agent any
+  options { skipDefaultCheckout() }
+  stages {
+    stage('Build & Unit Test') {
+      steps {
+        checkout scm
+        dir('auth-service') {
+          sh './gradlew clean build -i'
+          stash(name: 'auth-service')
+        }
+      }
+      post {
+        always {
+          junit 'auth-service/build/test-results/test/*.xml'
+        }
+      }
+    }
+    stage('Publish') {
+      steps {
+        dir('auth-service') {
+          unstash 'auth-service'
+          sh './gradlew dockerPush -i'
+        }
+      }
+    }
+  }
+}
+
+

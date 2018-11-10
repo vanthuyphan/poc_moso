@@ -1,0 +1,28 @@
+pipeline {
+  agent any
+  options { skipDefaultCheckout() }
+  stages {
+    stage('Build & Unit Test') {
+      steps {
+        checkout scm
+        dir('userprofile-service') {
+          sh './gradlew clean build -i'
+          stash(name: 'userprofile-service')
+        }
+      }
+      post {
+        always {
+          junit 'userprofile-service/build/test-results/test/*.xml'
+        }
+      }
+    }
+    stage('Publish') {
+      steps {
+        dir('userprofile-service') {
+          unstash 'userprofile-service'
+          sh './gradlew dockerPush -i'
+        }
+      }
+    }
+  }
+}

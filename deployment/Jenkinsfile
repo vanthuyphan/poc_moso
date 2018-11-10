@@ -1,0 +1,22 @@
+pipeline {
+  agent any
+  options { skipDefaultCheckout() }
+  stages {
+    stage('Deploy') {
+      steps {
+        checkout scm
+        dir('deployment') {
+          sh 'docker-compose -f docker-compose.yml -f deployment.yml down'
+          sh 'docker-compose -f docker-compose.yml -f deployment.yml up -d'
+          sh 'timeout 30 docker-compose logs -f || true'
+        }
+      }
+    }
+    stage('Test') {
+      steps {
+        echo 'Testing...'
+      }
+    }
+  }
+}
+

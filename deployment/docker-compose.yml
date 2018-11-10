@@ -1,0 +1,56 @@
+version: '3'
+
+services:
+
+  fabio:
+    image: fabiolb/fabio
+    ports:
+      - "9999:9999"
+      - "9998:9998"
+    environment:
+      - REGISTRY_CONSUL_ADDR=consul-agent:8500
+
+  redis:
+    image: redis:5
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: "redis-server --appendonly yes"
+
+  postgres:
+    image: postgres:11
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_PASSWORD=s3cr3t
+      - POSTGRES_MULTIPLE_DATABASES=authdb,userprofiledb
+      - POSTGRES_MULTIPLE_DATABASES_PASSWORD=s3cr3t
+    volumes:
+      - ./postgresql:/docker-entrypoint-initdb.d
+      - postgres_data:/var/lib/postgresql/data
+
+  consul-agent:
+    image: consul:latest
+    ports:
+      - "8400:8400"
+      - "8500:8500"
+      - "8600:8600"
+      - "8600:8600/udp"
+    command: "agent -retry-join consul-server-bootstrap -ui -client 0.0.0.0"
+
+  consul-server-bootstrap:
+    image: consul:latest
+    command: "agent -server -bootstrap-expect 3 -client 0.0.0.0"
+
+  consul-server-2:
+    image: consul:latest
+    command: "agent -server -retry-join consul-server-bootstrap -client 0.0.0.0"
+
+  consul-server-3:
+    image: consul:latest
+    command: "agent -server -retry-join consul-server-bootstrap -client 0.0.0.0"
+
+volumes:
+  redis_data:
+  postgres_data:
